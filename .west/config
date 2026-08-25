@@ -1,0 +1,7 @@
+[manifest]
+path = sample-zephyr-app
+file = west.yml
+
+[zephyr]
+base = zephyrproject/zephyr
+

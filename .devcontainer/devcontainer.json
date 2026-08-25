@@ -1,0 +1,30 @@
+{
+    "name": "Zephyr RTOS Environment",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--privileged",
+        "-v",
+        "/dev:/dev"
+    ],
+    "mounts": [
+        "source=${localEnv:HOME}/.gemini,target=/home/user/.gemini,type=bind",
+        "source=/opt/zephyrproject-rtos,target=/opt/zephyrproject-rtos,type=bind"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "twister-zephyr.zephyr-workbench",
+                "marus25.cortex-debug",
+                "eamodio.gitlens",
+                "twxs.cmake",
+                "plorefice.devicetree"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh"
+            }
+        }
+    }
+}
