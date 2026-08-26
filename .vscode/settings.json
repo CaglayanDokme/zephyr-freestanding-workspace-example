@@ -7,4 +7,5 @@
     "C_Cpp.default.cppStandard": "c++17",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
     "C_Cpp.intelliSenseEngine": "default",
+    "cmake.useCMakePresets": "always",
 }

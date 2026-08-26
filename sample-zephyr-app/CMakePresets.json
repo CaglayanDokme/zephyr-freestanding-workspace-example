@@ -1,0 +1,78 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${workspaceFolder}/build"
+    },
+    {
+      "name": "nucleo_g474re",
+      "displayName": "STM32 Nucleo G474RE (Debug)",
+      "description": "Target ST Nucleo G474RE board with Debug configuration",
+      "inherits": "base",
+      "cacheVariables": {
+        "BOARD": "nucleo_g474re",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "nucleo_g474re-release",
+      "displayName": "STM32 Nucleo G474RE (Release)",
+      "description": "Target ST Nucleo G474RE board with Release configuration",
+      "inherits": "base",
+      "cacheVariables": {
+        "BOARD": "nucleo_g474re",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "native_sim",
+      "displayName": "Native Sim (Debug)",
+      "description": "Target Native POSIX simulation with Debug configuration",
+      "inherits": "base",
+      "cacheVariables": {
+        "BOARD": "native_sim",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "native_sim-release",
+      "displayName": "Native Sim (Release)",
+      "description": "Target Native POSIX simulation with Release configuration",
+      "inherits": "base",
+      "cacheVariables": {
+        "BOARD": "native_sim",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "nucleo_g474re",
+      "displayName": "Build Nucleo G474RE (Debug)",
+      "configurePreset": "nucleo_g474re"
+    },
+    {
+      "name": "nucleo_g474re-release",
+      "displayName": "Build Nucleo G474RE (Release)",
+      "configurePreset": "nucleo_g474re-release"
+    },
+    {
+      "name": "native_sim",
+      "displayName": "Build Native Sim (Debug)",
+      "configurePreset": "native_sim"
+    },
+    {
+      "name": "native_sim-release",
+      "displayName": "Build Native Sim (Release)",
+      "configurePreset": "native_sim-release"
+    }
+  ]
+}
