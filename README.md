@@ -39,7 +39,7 @@ west init --manifest-url https://github.com/zephyrproject-rtos/zephyr --manifest
 Fetch/update the specific modules required by the application:
 
 ```bash
-west update ${ZEPHYR_APP_DEPS}
+west update "${ZEPHYR_APP_DEPS[@]}"
 ```
 
 ### 4. Register Zephyr with CMake
