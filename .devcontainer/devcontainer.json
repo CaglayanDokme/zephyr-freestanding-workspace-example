@@ -16,6 +16,7 @@
         "vscode": {
             "extensions": [
                 "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
                 "twister-zephyr.zephyr-workbench",
                 "marus25.cortex-debug",
                 "eamodio.gitlens",
