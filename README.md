@@ -49,6 +49,8 @@ Register the Zephyr installation to the CMake user package registry:
 west zephyr-export
 ```
 
+> Without this step, CMake will not be able to locate the Zephyr installation when building the application.
+
 ## Building and Running
 
 - **Build for ST Nucleo G474RE:**
@@ -56,6 +58,7 @@ west zephyr-export
   west build -b nucleo_g474re sample-zephyr-app -d build --pristine
   ```
 
+- Another option is to use CMake directly, if you successfully exported Zephyr to the CMake user package registry:
   ```bash
   cmake -B build -DBOARD=nucleo_g474re -S sample-zephyr-app
   cmake --build build
