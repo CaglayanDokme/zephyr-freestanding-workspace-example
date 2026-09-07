@@ -74,3 +74,13 @@ west zephyr-export
 VS Code launch configurations are provided in [.vscode/launch.json](.vscode/launch.json):
 - **Debug with OpenOCD (Nucleo G474RE)**: Launches OpenOCD and connects GDB to the board via ST-Link.
 - **Attach to OpenOCD Server**: Connects GDB to a running OpenOCD instance on port 3333.
+
+## AI Tools
+
+### Claude Code in the Dev Container
+Claude Code is installed through the official [Dev Container Feature](https://code.claude.com/docs/en/devcontainer), which also adds the Claude Code VS Code extension. The CLI auto-updates itself inside the container.
+
+- On first use, open a terminal in the container, run `claude`, and follow the browser sign-in prompt. If the browser finishes but the terminal does not notice, paste the code shown in the browser at the `Paste code here if prompted` prompt.
+- Authentication and settings live in the Docker named volume `claude-code-config`, mounted at `/home/user/.claude` with `CLAUDE_CONFIG_DIR` pointing at it. The volume is shared by every dev container on this host that mounts it, so you sign in once per host and stay signed in across rebuilds. To start over, sign out with `/logout` or run `docker volume rm claude-code-config`.
+
+> The volume holds your Claude Code credentials. Anything running inside the container, including `claude --dangerously-skip-permissions`, can read them.

@@ -11,14 +11,14 @@ RUN rm -rf /var/lib/apt/lists/*
 # Set default shell to zsh for user
 RUN chsh -s $(which zsh) user
 
-# Add ~/.local/bin to PATH for all users/shells
+# Mount point for the Claude Code config volume (see devcontainer.json); pre-create it
+# so the named volume is initialised with the right owner instead of root.
+RUN mkdir -p /home/user/.claude && chown -R user:user /home/user/.claude
+
+# Some binaries appear in ~/.local/bin, so add that to the PATH
 ENV PATH="/home/user/.local/bin:${PATH}"
 
 USER user
 
 RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
 
-# Ensure system-wide availability via /usr/local/bin symlink
-USER root
-RUN ln -sf /home/user/.local/bin/agy /usr/local/bin/agy
-USER user
