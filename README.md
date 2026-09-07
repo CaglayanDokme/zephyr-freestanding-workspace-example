@@ -11,6 +11,11 @@ This project demonstrates:
 
 ## Environment Setup
 
+### 0. Where the Zephyr Source Tree Lives
+Inside the dev container, `/opt/zephyrproject-rtos` is the Docker named volume `zephyrproject-rtos` (declared in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)). Each Zephyr version gets its own subdirectory, e.g. `/opt/zephyrproject-rtos/v4.4.2/zephyr`. The volume persists across container rebuilds and is shared by every dev container on this host that mounts it, so a version fetched once is available to all of them.
+
+When developing directly on the host instead of in the container, override `ZEPHYR_BASE` to point at your local checkout before sourcing [env.sh](env.sh).
+
 ### 1. Configure Environment Variables
 Source the [env.sh](env.sh) script to set default environment variables:
 
@@ -29,7 +34,7 @@ ZEPHYR_VERSION=v4.3.1; ZEPHYR_BASE=~/zephyrproject/zephyr; source env.sh;
 ```
 
 ### 2. Initialize Zephyr Source Tree (if not already present)
-If the Zephyr source tree is not yet initialized at `${ZEPHYR_BASE}`, run:
+If the Zephyr source tree is not yet initialized at `${ZEPHYR_BASE}`, run (inside the container this writes into the `zephyrproject-rtos` volume):
 
 ```bash
 west init --manifest-url https://github.com/zephyrproject-rtos/zephyr --manifest-rev ${ZEPHYR_VERSION} ${ZEPHYR_BASE}

@@ -15,7 +15,7 @@
     "mounts": [
         "source=${localEnv:HOME}/.gemini,target=/home/user/.gemini,type=bind",
         "source=claude-code-config,target=/home/user/.claude,type=volume",
-        "source=/opt/zephyrproject-rtos,target=/opt/zephyrproject-rtos,type=bind"
+        "source=zephyrproject-rtos,target=/opt/zephyrproject-rtos,type=volume"
     ],
     "containerEnv": {
         "CLAUDE_CONFIG_DIR": "/home/user/.claude"

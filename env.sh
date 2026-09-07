@@ -7,7 +7,8 @@
 export ZEPHYR_VERSION="${ZEPHYR_VERSION:-v4.4.2}"
 
 # Common installation path for Zephyr RTOS, fundamental for freestanding application development.
-# If using containers, make sure that this path is correctly mounted and accessible.
+# In the dev container this path is the Docker named volume "zephyrproject-rtos" (see .devcontainer/devcontainer.json).
+# On a host machine, override ZEPHYR_BASE to point at your local checkout before sourcing this script.
 export ZEPHYR_BASE="${ZEPHYR_BASE:-/opt/zephyrproject-rtos/${ZEPHYR_VERSION}/zephyr}"
 
 # Module dependencies for the application. Adjust as necessary for your specific application requirements.
