@@ -20,6 +20,7 @@
     "containerEnv": {
         "CLAUDE_CONFIG_DIR": "/home/user/.claude"
     },
+    "postCreateCommand": "bash .devcontainer/setup-zephyr.sh",
     "customizations": {
         "vscode": {
             "extensions": [
