@@ -17,7 +17,10 @@ source "${repo_root}/env.sh"
 # The Dockerfile pre-creates the mount point owned by the container user, so a fresh volume is writable.
 # A volume created before that fix (or populated as root) needs a one-off ownership fix.
 if ! mkdir -p "${ZEPHYR_WORKSPACE}" 2>/dev/null || [[ ! -w "${ZEPHYR_WORKSPACE}" ]]; then
-    sudo install -d -o "$(id -u)" -g "$(id -g)" "${ZEPHYR_WORKSPACE}"
+    container_uid="$(id -u)"
+    container_gid="$(id -g)"
+
+    sudo install -d -o "${container_uid}" -g "${container_gid}" "${ZEPHYR_WORKSPACE}"
 fi
 
 if [[ ! -d "${ZEPHYR_WORKSPACE}/.west" ]]; then

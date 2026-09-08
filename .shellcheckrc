@@ -1,0 +1,13 @@
+# Follow files pulled in with "source" so that env.sh's variables are known to be defined.
+# Without this, every script that sources env.sh reports SC1091 and shellcheck has to be
+# invoked as "shellcheck -x" to be useful.
+external-sources=true
+
+# Resolve sourced paths relative to the script being checked rather than the current working
+# directory, so ".devcontainer/setup-zephyr.sh" checks the same from the repo root, from
+# inside .devcontainer, or from an editor plugin with an unrelated cwd.
+source-path=SCRIPTDIR
+source-path=SCRIPTDIR/..
+
+# The scripts in this repository currently pass "shellcheck --enable=all --severity=style"
+# with no findings. Add "enable=all" below if you want that standard enforced for everyone.

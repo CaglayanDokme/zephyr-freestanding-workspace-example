@@ -29,6 +29,19 @@ fail() {
     exit 1
 }
 
+# First $1 lines of the string in $2, with a count of whatever was left out. Done in the
+# shell rather than by piping to head so that no command substitution masks the exit status
+# of the git or west call whose output is being trimmed.
+first_lines() {
+    local -a all
+    mapfile -t all <<< "$2"
+    printf '%s\n' "${all[@]:0:$1}"
+    if (( ${#all[@]} > $1 )); then
+        printf '  ... and %d more line(s)\n' "$(( ${#all[@]} - $1 ))"
+    fi
+    return 0
+}
+
 # 1. The workspace exists and west finished initialising it. Guarding on .west/config rather
 #    than the .west directory is what catches an interrupted first "west init", which would
 #    otherwise look like a valid workspace to setup-zephyr.sh forever.
@@ -46,10 +59,16 @@ branch="$(git -C "${ZEPHYR_BASE}" rev-parse --abbrev-ref HEAD 2>/dev/null || ech
 [[ "${branch}" == "HEAD" ]] \
     || fail "Zephyr is on branch '${branch}', expected a detached HEAD at ${ZEPHYR_VERSION}"
 
-# 4. Nobody edited Zephyr in place.
-if [[ -n "$(git -C "${ZEPHYR_BASE}" status --porcelain --untracked-files=no)" ]]; then
+# 4. Nobody edited Zephyr in place. git's exit status is checked rather than inferred from
+#    empty output, so an unreadable repository fails loudly instead of looking clean.
+if ! zephyr_changes="$(git -C "${ZEPHYR_BASE}" status --short --untracked-files=no 2>&1)"; then
+    fail "cannot read the state of ${ZEPHYR_BASE}:
+${zephyr_changes}"
+fi
+if [[ -n "${zephyr_changes}" ]]; then
+    report="$(first_lines 10 "${zephyr_changes}")"
     fail "Zephyr has local modifications:
-$(git -C "${ZEPHYR_BASE}" status --short --untracked-files=no | head -10)"
+${report}"
 fi
 
 # 5. Every module this application declares is actually cloned. Modules another project needs
@@ -66,9 +85,11 @@ done
 #    nothing when the workspace matches. It honours .gitignore, so ordinary build droppings
 #    such as __pycache__ do not trip it.
 drift="$(cd "${ZEPHYR_WORKSPACE}" && west compare 2>&1)"
-[[ -z "${drift}" ]] \
-    || fail "workspace does not match the ${ZEPHYR_VERSION} manifest:
-$(printf '%s' "${drift}" | head -24)"
+if [[ -n "${drift}" ]]; then
+    report="$(first_lines 24 "${drift}")"
+    fail "workspace does not match the ${ZEPHYR_VERSION} manifest:
+${report}"
+fi
 
 printf 'Zephyr %s verified: %s clean, at the manifest revision, with %s present.\n' \
     "${ZEPHYR_VERSION}" "${ZEPHYR_BASE}" "${ZEPHYR_APP_DEPS[*]}"
