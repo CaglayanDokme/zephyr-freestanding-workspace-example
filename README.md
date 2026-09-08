@@ -65,7 +65,7 @@ This sets the following default variables (which can be overridden prior to sour
 
 To use custom paths on your local machine or in CI/CD, simply override them:
 ```bash
-ZEPHYR_VERSION=v4.3.1 ZEPHYR_WORKSPACE=~/zephyrproject source env.sh
+ZEPHYR_VERSION=v4.3.1; ZEPHYR_WORKSPACE=~/zephyrproject; source env.sh
 ```
 
 ### 2. Initialize Zephyr Source Tree (if not already present)
