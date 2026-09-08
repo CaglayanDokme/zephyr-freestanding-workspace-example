@@ -9,6 +9,26 @@ This project demonstrates:
 - Portable environment setup via [env.sh](env.sh) suitable for local development, containers, and CI/CD pipelines.
 - Docker Dev Container configuration for development and debugging.
 
+## Prerequisites
+
+For the dev container path you need:
+
+- **Docker Engine 18.06 or newer**, installed from Docker's own repositories, or Docker Desktop. On Ubuntu the `docker` snap package is **not** supported by the Dev Containers extension.
+- **Your user in the `docker` group** on Linux: `sudo usermod -aG docker $USER`, then log out and back in.
+- **VS Code** with the **Dev Containers** extension (`ms-vscode-remote.remote-containers`).
+- **Disk space.** This is a large image. The figures below are measured, not estimated, for Zephyr v4.4.2 on a linux/amd64 host.
+
+| What | Size |
+| --- | --- |
+| Base image download | 7.7 GB compressed (amd64) |
+| Base image unpacked | 31.8 GB |
+| Image after this repo's Dockerfile and features | 33.4 GB |
+| Shared Zephyr volume, per version | ~2.7 GB |
+
+Budget roughly **40 GB free** for the image plus one Zephyr version, and another ~2.7 GB for each additional version you keep in the volume. On Docker Desktop the virtual disk has its own limit, configured under **Settings → Resources**; raise it before the first build if it is smaller than that.
+
+Most of the image is the Zephyr SDK: 13 GB covering 35 target toolchains, of which this application uses one (`arm-zephyr-eabi`, 761 MB) plus the host tools (1.2 GB). Nothing in this repository needs the rest, so a slimmer project-specific image is an option if the size becomes a problem.
+
 ## Dev Container Setup
 
 Open this repository in VS Code and select **Dev Containers: Reopen in Container**.

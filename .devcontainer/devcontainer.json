@@ -19,6 +19,21 @@
     "containerEnv": {
         "CLAUDE_CONFIG_DIR": "/home/user/.claude"
     },
+    // Declared for hosts that enforce it (GitHub Codespaces). The local Dev Containers
+    // extension does NOT check these, so the same figures are documented in README.md
+    // where a developer will actually read them.
+    //
+    // storage: measured - 33.4 GB image + ~2.7 GB per Zephyr version in the shared
+    //          volume, leaving headroom for builds and a second version.
+    // memory:  a floor, not a measurement. This app's build peaks around 2.6 GB
+    //          including the VS Code server; 8 GB leaves room for -j on many cores
+    //          and for applications larger than this sample.
+    // cpus:    a floor. Builds scale with cores; nothing here requires 4.
+    "hostRequirements": {
+        "storage": "40gb",
+        "memory": "8gb",
+        "cpus": 4
+    },
     "postCreateCommand": "bash .devcontainer/setup-zephyr.sh",
     "customizations": {
         "vscode": {
