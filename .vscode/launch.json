@@ -4,7 +4,7 @@
         {
             "name": "Debug with OpenOCD (Nucleo G474RE)",
             "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/zephyr/zephyr.elf",
+            "executable": "${command:cmake.buildDirectory}/zephyr/zephyr.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
@@ -22,7 +22,7 @@
         {
             "name": "Attach to OpenOCD Server",
             "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/zephyr/zephyr.elf",
+            "executable": "${command:cmake.buildDirectory}/zephyr/zephyr.elf",
             "request": "attach",
             "type": "cortex-debug",
             "servertype": "external",
@@ -33,7 +33,7 @@
             "name": "Debug Native Sim (GDB)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/zephyr/zephyr.exe",
+            "program": "${command:cmake.buildDirectory}/zephyr/zephyr.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

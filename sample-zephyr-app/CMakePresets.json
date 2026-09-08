@@ -10,7 +10,7 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceParentDir}/build"
+      "binaryDir": "${sourceParentDir}/build/${presetName}"
     },
     {
       "name": "nucleo_g474re",
