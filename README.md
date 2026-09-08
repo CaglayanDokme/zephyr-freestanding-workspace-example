@@ -112,20 +112,22 @@ This registry entry lets CMake locate Zephyr without relying on `ZEPHYR_BASE`. T
 
 ## Building and Running
 
+Both routes below write to `build/<preset>`, matching the `binaryDir` in [sample-zephyr-app/CMakePresets.json](sample-zephyr-app/CMakePresets.json), so one board never overwrites another's build tree.
+
 - **Build for ST Nucleo G474RE:**
   ```bash
-  west build -b nucleo_g474re sample-zephyr-app -d build --pristine
+  west build --board nucleo_g474re sample-zephyr-app --build-dir build/nucleo_g474re --pristine
   ```
 
-- Another option is to use CMake directly, if you successfully exported Zephyr to the CMake user package registry:
+- Another option is to use the CMake presets directly, if you successfully exported Zephyr to the CMake user package registry. Run `cmake --list-presets -S sample-zephyr-app` to see the four available presets:
   ```bash
-  cmake -B build -DBOARD=nucleo_g474re -S sample-zephyr-app
-  cmake --build build
+  cmake -S sample-zephyr-app --preset nucleo_g474re
+  cmake --build build/nucleo_g474re
   ```
 
 - **Flash to ST Nucleo G474RE:**
   ```bash
-  west flash -d build
+  west flash --build-dir build/nucleo_g474re --runner openocd
   ```
 
 ## Debugging
