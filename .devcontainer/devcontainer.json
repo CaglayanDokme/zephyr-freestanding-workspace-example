@@ -35,6 +35,11 @@
         "cpus": 4
     },
     "postCreateCommand": "bash .devcontainer/setup-zephyr.sh",
+    // Without this, "waitFor" defaults to "updateContentCommand" and VS Code attaches
+    // while setup-zephyr.sh is still running west init/update: the first terminal looks
+    // ready but every west command fails. Waiting blocks the window during the first
+    // clone, which is the intended trade.
+    "waitFor": "postCreateCommand",
     "customizations": {
         "vscode": {
             "extensions": [

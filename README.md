@@ -33,6 +33,8 @@ Most of the image is the Zephyr SDK: 13 GB covering 35 target toolchains, of whi
 
 Open this repository in VS Code and select **Dev Containers: Reopen in Container**.
 
+Creating the container does two slow things in sequence: it pulls the image, then it runs [.devcontainer/setup-zephyr.sh](.devcontainer/setup-zephyr.sh), which clones Zephyr and the configured modules into the shared volume. On a cold host that is roughly 9 GB over the network, so expect to wait. A host where another dev container already populated the volume skips the clone. To watch progress, or to read the error if creation fails, run **Dev Containers: Show Container Log** from the command palette.
+
 Inside the container, `/opt/zephyrproject-rtos` is the Docker named volume `zephyrproject-rtos` (declared in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)). Each Zephyr version gets its own west workspace in a subdirectory, e.g. `/opt/zephyrproject-rtos/v4.4.2`. The volume persists across container rebuilds and is shared by every dev container on this host that mounts it, so a version fetched once is available to all of them.
 
 On every container creation, [.devcontainer/setup-zephyr.sh](.devcontainer/setup-zephyr.sh) runs as `postCreateCommand`. It sources [env.sh](env.sh) and then:
