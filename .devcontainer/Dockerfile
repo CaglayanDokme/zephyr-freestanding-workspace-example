@@ -19,10 +19,4 @@ RUN mkdir -p /home/user/.claude && chown -R user:user /home/user/.claude
 # named volume is initialised owned by user instead of root.
 RUN mkdir -p /opt/zephyrproject-rtos && chown -R user:user /opt/zephyrproject-rtos
 
-# Some binaries appear in ~/.local/bin, so add that to the PATH
-ENV PATH="/home/user/.local/bin:${PATH}"
-
 USER user
-
-RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
-

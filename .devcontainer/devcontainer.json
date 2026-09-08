@@ -13,7 +13,6 @@
         "/dev:/dev"
     ],
     "mounts": [
-        "source=${localEnv:HOME}/.gemini,target=/home/user/.gemini,type=bind",
         "source=claude-code-config,target=/home/user/.claude,type=volume",
         "source=zephyrproject-rtos,target=/opt/zephyrproject-rtos,type=volume"
     ],
