@@ -40,6 +40,11 @@
     // ready but every west command fails. Waiting blocks the window during the first
     // clone, which is the intended trade.
     "waitFor": "postCreateCommand",
+    // Every start, not just creation. The shared Zephyr volume is read-write and shared
+    // with every other dev container on this host, so it can be changed between sessions
+    // by another project. Runs after postCreateCommand on first creation, and again on
+    // each subsequent start. A failure notifies without blocking the container.
+    "postStartCommand": "bash .devcontainer/verify-zephyr.sh",
     "customizations": {
         "vscode": {
             "extensions": [

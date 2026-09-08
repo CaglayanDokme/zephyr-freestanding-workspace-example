@@ -46,6 +46,18 @@ To pick another Zephyr version, change the `ZEPHYR_VERSION` default in [env.sh](
 
 > Removing the volume deletes every Zephyr version stored in it. The next container creation downloads the configured version again.
 
+### Shared tree verification
+
+Because the volume is mounted read-write and shared, another project on the same host can leave the tree in a state this project does not expect: a different ref checked out, an edit made in place, or a module off its manifest revision. None of that announces itself, and all of it changes what you build.
+
+On every container start, [.devcontainer/verify-zephyr.sh](.devcontainer/verify-zephyr.sh) runs as `postStartCommand` and checks that the tree still matches `${ZEPHYR_VERSION}`'s manifest. It verifies that the west workspace is fully initialized, that Zephyr sits at the expected tag with a detached `HEAD` and no local modifications, that every module in `ZEPHYR_APP_DEPS` is cloned, and that `west compare` reports no revision drift in any project. Modules other projects need but this one does not are ignored, so projects may declare different dependency sets.
+
+The script only reads. It repairs nothing and names the problem instead, because the tree is shared and the right fix depends on why it changed. A failure shows an error notification in VS Code and leaves the container usable so you can investigate. You can run it by hand at any time:
+
+```bash
+bash .devcontainer/verify-zephyr.sh
+```
+
 ## Native Environment Setup
 
 The steps below are what the dev container setup script automates. Use them when developing directly on the host or in CI.
