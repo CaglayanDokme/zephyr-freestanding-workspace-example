@@ -105,6 +105,9 @@ sudo curl -fsSL -o /etc/udev/rules.d/60-openocd.rules \
 sudo udevadm control --reload
 ```
 
+If the board is plugged into your local machine while the container runs on a remote one, see
+[docs/remote-debugging.md](docs/remote-debugging.md).
+
 ## Debugging
 
 Both hardware configurations need the host-side probe access described above.
