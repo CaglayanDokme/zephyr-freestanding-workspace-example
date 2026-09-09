@@ -88,16 +88,28 @@ Run these in a container terminal, from the repository root. Both routes write t
   cmake --build build/nucleo_g474re
   ```
 
-- **Flash to ST Nucleo G474RE:**
+- **Flash to ST Nucleo G474RE:** requires probe access on the host, see below.
   ```bash
   west flash --build-dir build/nucleo_g474re --runner openocd
   ```
 
+## Probe Access
+
+Flashing and debugging need OpenOCD's udev rules installed on the **host**, not in the container: the container is given the host's device nodes, but the host decides who may write to them. Install them once, then unplug and replug the board.
+
+```bash
+sudo curl -fsSL -o /etc/udev/rules.d/60-openocd.rules \
+    https://raw.githubusercontent.com/openocd-org/openocd/master/contrib/60-openocd.rules
+sudo udevadm control --reload
+```
+
 ## Debugging
+
+Both hardware configurations need the host-side probe access described above.
 
 VS Code launch configurations are provided in [.vscode/launch.json](.vscode/launch.json):
 - **Debug with OpenOCD (Nucleo G474RE)**: Launches OpenOCD and connects GDB to the board via ST-Link.
-- **Attach to OpenOCD Server**: Connects GDB to a running OpenOCD instance on port 3333.
+- **Attach to OpenOCD Server**: Connects GDB to an OpenOCD instance running inside the container on port 3333.
 
 ## AI Tools
 
