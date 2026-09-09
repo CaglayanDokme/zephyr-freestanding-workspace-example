@@ -19,4 +19,18 @@ RUN mkdir -p /home/user/.claude && chown -R user:user /home/user/.claude
 # named volume is initialised owned by user instead of root.
 RUN mkdir -p /opt/zephyrproject-rtos && chown -R user:user /opt/zephyrproject-rtos
 
+# Version- and architecture-neutral names for the SDK, so nothing outside this file has to spell
+# out "zephyr-sdk-1.0.1" or "x86_64-pokysdk-linux". West and CMake resolve the SDK for themselves
+# through the CMake user package registry, but .vscode/launch.json cannot, and naming the versioned
+# paths there means an SDK bump silently breaks debugging while the build keeps working.
+# ZSDK_VERSION is an environment variable of the base image, so the version is never repeated here.
+#
+# These are symlinks only, deliberately not added to PATH: the SDK carries 35 target toolchains and
+# putting one of them on PATH would make ARM look like this workspace's default target. Nothing in
+# the build needs them there either.
+RUN ln -s "/opt/toolchains/zephyr-sdk-${ZSDK_VERSION}" /opt/toolchains/zephyr-sdk
+RUN ln -s "/opt/toolchains/zephyr-sdk/hosttools/sysroots/$(uname -m)-pokysdk-linux" /opt/toolchains/hosttools
+
+ENV PATH="${PATH}:/opt/toolchains/hosttools/usr/bin"
+
 USER user

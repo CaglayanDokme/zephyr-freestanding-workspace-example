@@ -8,11 +8,8 @@
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
-            "serverpath": "/opt/toolchains/zephyr-sdk-1.0.1/hosttools/sysroots/x86_64-pokysdk-linux/usr/bin/openocd",
-            "gdbPath": "/opt/toolchains/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
-            "searchDir": [
-                "/opt/toolchains/zephyr-sdk-1.0.1/hosttools/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts"
-            ],
+            "serverpath": "openocd",
+            "gdbPath": "/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
             "configFiles": [
                 "board/st_nucleo_g4.cfg"
             ],
@@ -26,7 +23,7 @@
             "request": "attach",
             "type": "cortex-debug",
             "servertype": "external",
-            "gdbPath": "/opt/toolchains/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+            "gdbPath": "/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
             "gdbTarget": "localhost:3333"
         },
         {
