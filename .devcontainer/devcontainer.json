@@ -54,10 +54,12 @@
                 "eamodio.gitlens",
                 "twxs.cmake",
                 "plorefice.devicetree"
-            ],
-            "settings": {
-                "terminal.integrated.defaultProfile.linux": "zsh"
-            }
+            ]
+            // No terminal profile is set here on purpose. Which shell a developer uses is a
+            // personal choice, so it belongs in their own VS Code user settings alongside
+            // "dotfiles.repository", not in a definition every teammate inherits. With nothing
+            // set, VS Code falls back to the account's login shell, which the Dockerfile leaves
+            // as bash.
         }
     }
 }

@@ -2,14 +2,11 @@ FROM docker.io/zephyrprojectrtos/zephyr-build:v0.29.3
 
 USER root
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends stow
-RUN apt-get install -y --no-install-recommends zsh
-RUN apt-get install -y --no-install-recommends curl
-RUN rm -rf /var/lib/apt/lists/*
-
-# Set default shell to zsh for user
-RUN chsh -s $(which zsh) user
+# The base image leaves this account on /bin/sh. bash is already present and is a reasonable
+# interactive default for anyone who has not injected their own dotfiles. Developers who prefer
+# another shell install and select it from their own dotfiles; see VS Code's dotfiles.repository
+# setting. Nothing personal belongs in this image.
+RUN chsh -s /bin/bash user
 
 # Mount point for the Claude Code config volume (see devcontainer.json); pre-create it
 # so the named volume is initialised with the right owner instead of root.
