@@ -5,9 +5,11 @@ A basic Zephyr RTOS "Hello World" application configured for STM32 Nucleo-G474RE
 ## Overview
 
 This project demonstrates:
-- Freestanding application structure pointing to a central or local Zephyr source tree via the `ZEPHYR_BASE` environment variable.
-- Portable environment setup via [env.sh](env.sh) suitable for local development, containers, and CI/CD pipelines.
+- Freestanding application structure pointing to a shared Zephyr source tree via the `ZEPHYR_BASE` environment variable.
+- A single place, [env.sh](env.sh), where the Zephyr version and the application's module dependencies are declared.
 - Docker Dev Container configuration for development and debugging.
+
+> **The dev container is the only supported environment.** Everything the build needs, west, CMake, Ninja, Python packages and the Zephyr SDK, comes from the container image rather than from this repository, so the commands below will not work on a bare host. If you want a host installation anyway, follow Zephyr's own [Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html); this repository does not document or test that path.
 
 ## Prerequisites
 
@@ -40,11 +42,24 @@ Inside the container, `/opt/zephyrproject-rtos` is the Docker named volume `zeph
 On every container creation, [.devcontainer/setup-zephyr.sh](.devcontainer/setup-zephyr.sh) runs as `postCreateCommand`. It sources [env.sh](env.sh) and then:
 1. Runs `west init` for `${ZEPHYR_VERSION}` only if no west workspace exists yet at `${ZEPHYR_WORKSPACE}`. An existing checkout in the volume is reused as-is.
 2. Runs `west update` for the application's module dependencies, so they match the manifest revision.
-3. Runs `west zephyr-export`, which writes to the container's home directory and therefore has to be redone after every rebuild.
-
-To pick another Zephyr version, change the `ZEPHYR_VERSION` default in [env.sh](env.sh) and rebuild the container; a version not yet present in the volume is fetched on first creation.
+3. Runs `west zephyr-export`, which writes to the container's home directory and therefore has to be redone after every rebuild. The resulting registry entry lets CMake locate Zephyr without relying on `ZEPHYR_BASE`, which is what makes the CMake preset route below work. The application's `CMakeLists.txt` also uses `ZEPHYR_BASE` as a direct hint when it is set.
 
 > Removing the volume deletes every Zephyr version stored in it. The next container creation downloads the configured version again.
+
+### Environment variables
+
+[env.sh](env.sh) is the single source of truth for which Zephyr the container builds against. It is sourced by the setup and verification scripts, and it defines:
+
+| Variable | Default |
+| --- | --- |
+| `ZEPHYR_VERSION` | `v4.4.2` |
+| `ZEPHYR_WORKSPACE` | `/opt/zephyrproject-rtos/${ZEPHYR_VERSION}` |
+| `ZEPHYR_BASE` | `${ZEPHYR_WORKSPACE}/zephyr` |
+| `ZEPHYR_APP_DEPS` | `cmsis_6 hal_stm32` |
+
+To target another Zephyr version, change the `ZEPHYR_VERSION` default and rebuild the container; a version not yet present in the volume is fetched on first creation. To add a module dependency, add it to `ZEPHYR_APP_DEPS` and rebuild, or fetch it in place with `west update <module>` from `${ZEPHYR_WORKSPACE}`.
+
+A container terminal does not have these variables set, so run `source env.sh` before using `west` in a shell you opened yourself.
 
 ### Shared tree verification
 
@@ -58,61 +73,9 @@ The script only reads. It repairs nothing and names the problem instead, because
 bash .devcontainer/verify-zephyr.sh
 ```
 
-## Native Environment Setup
-
-The steps below are what the dev container setup script automates. Use them when developing directly on the host or in CI.
-
-### 1. Configure Environment Variables
-Source the [env.sh](env.sh) script to set default environment variables:
-
-```bash
-source env.sh
-```
-
-This sets the following default variables (which can be overridden prior to sourcing):
-- `ZEPHYR_VERSION` _(default: `v4.4.2`)_
-- `ZEPHYR_WORKSPACE` _(default: `/opt/zephyrproject-rtos/${ZEPHYR_VERSION}`)_
-- `ZEPHYR_BASE` _(default: `${ZEPHYR_WORKSPACE}/zephyr`)_
-- `ZEPHYR_APP_DEPS` _(default: `"cmsis_6 hal_stm32"`)_
-
-To use custom paths on your local machine or in CI/CD, simply override them:
-```bash
-ZEPHYR_VERSION=v4.3.1; ZEPHYR_WORKSPACE=~/zephyrproject; source env.sh
-```
-
-### 2. Initialize Zephyr Source Tree (if not already present)
-If the west workspace is not yet initialized at `${ZEPHYR_WORKSPACE}`, run:
-
-```bash
-west init \
-    --manifest-url https://github.com/zephyrproject-rtos/zephyr \
-    --manifest-rev "${ZEPHYR_VERSION}" \
-    "${ZEPHYR_WORKSPACE}"
-```
-
-### 3. Update Application Dependencies
-Fetch/update the specific modules required by the application:
-
-```bash
-(
-    cd "${ZEPHYR_WORKSPACE}" && west update "${ZEPHYR_APP_DEPS[@]}"
-)
-```
-
-### 4. Register Zephyr with CMake
-Register the Zephyr installation to the CMake user package registry:
-
-```bash
-(
-    cd "${ZEPHYR_WORKSPACE}" && west zephyr-export
-)
-```
-
-This registry entry lets CMake locate Zephyr without relying on `ZEPHYR_BASE`. The application's `CMakeLists.txt` also uses `ZEPHYR_BASE` as a direct hint when it is set.
-
 ## Building and Running
 
-Both routes below write to `build/<preset>`, matching the `binaryDir` in [sample-zephyr-app/CMakePresets.json](sample-zephyr-app/CMakePresets.json), so one board never overwrites another's build tree.
+Run these in a container terminal, from the repository root. Both routes write to `build/<preset>`, matching the `binaryDir` in [sample-zephyr-app/CMakePresets.json](sample-zephyr-app/CMakePresets.json), so one board never overwrites another's build tree.
 
 - **Build for ST Nucleo G474RE:**
   ```bash

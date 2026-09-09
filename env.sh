@@ -7,8 +7,9 @@
 export ZEPHYR_VERSION="${ZEPHYR_VERSION:-v4.4.2}"
 
 # West workspace containing Zephyr and its modules for the selected version.
-# In the dev container, /opt/zephyrproject-rtos is the Docker named volume "zephyrproject-rtos"
-# (see .devcontainer/devcontainer.json); on a host machine, override ZEPHYR_WORKSPACE to your local checkout.
+# /opt/zephyrproject-rtos is the Docker named volume "zephyrproject-rtos", declared in
+# .devcontainer/devcontainer.json. The dev container is the only supported environment for
+# this workspace, so this path is expected to resolve inside it.
 export ZEPHYR_WORKSPACE="${ZEPHYR_WORKSPACE:-/opt/zephyrproject-rtos/${ZEPHYR_VERSION}}"
 
 # Zephyr repository within the west workspace.
