@@ -46,7 +46,7 @@ first_lines() {
 #    than the .west directory is what catches an interrupted first "west init", which would
 #    otherwise look like a valid workspace to setup-zephyr.sh forever.
 [[ -f "${ZEPHYR_WORKSPACE}/.west/config" ]] \
-    || fail "no initialised west workspace at ${ZEPHYR_WORKSPACE}; remove ${ZEPHYR_WORKSPACE}/.west and rebuild the container"
+    || fail "no initialised west workspace at ${ZEPHYR_WORKSPACE}; rebuild the container and setup-zephyr.sh will attempt to repair it"
 
 # 2. Zephyr is at the tag we asked for, not merely at some Zephyr.
 actual_tag="$(git -C "${ZEPHYR_BASE}" describe --tags --exact-match 2>/dev/null || true)"
