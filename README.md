@@ -20,13 +20,14 @@ For the dev container path you need:
 - **Docker Engine 18.06 or newer**, installed from Docker's own repositories. On Ubuntu the `docker` snap package is **not** supported by the Dev Containers extension, and Docker Desktop cannot reach the debug probe.
 - **Your user in the `docker` group**: `sudo usermod -aG docker $USER`, then log out and back in.
 - **VS Code** with the **Dev Containers** extension (`ms-vscode-remote.remote-containers`).
-- **Disk space.** This is a large image. The figures below are measured, not estimated, for Zephyr v4.4.2 on a linux/amd64 host.
+- **Disk space.** This is a large image. The figures below are measured, not estimated, for Zephyr v4.4.2 on a linux/amd64 host (image sizes re-measured 2026-09-23 after Claude Code moved from the Dev Container Feature into the Dockerfile: the feature layer went, the CLI came in).
 
 | What | Size |
 | --- | --- |
 | Base image download | 7.7 GB compressed (amd64) |
 | Base image unpacked | 31.8 GB |
-| Image after this repo's Dockerfile and features | 33.4 GB |
+| Image after this repo's Dockerfile (Claude Code CLI included) | 32.2 GB |
+| Dev Containers uid-remap layer per host user (copies the account's home, 217 MB of it the CLI) | measured 217 MB on the PetaLinux image, same mechanism |
 | Shared Zephyr volume, per version | ~2.7 GB |
 
 Budget roughly **40 GB free** for the image plus one Zephyr version, and another ~2.7 GB for each additional version you keep in the volume.
@@ -119,9 +120,9 @@ VS Code launch configurations are provided in [.vscode/launch.json](.vscode/laun
 ## AI Tools
 
 ### Claude Code in the Dev Container
-Claude Code is installed through the official [Dev Container Feature](https://code.claude.com/docs/en/devcontainer), which also adds the Claude Code VS Code extension. The CLI auto-updates itself inside the container.
+Claude Code is installed into the image by Anthropic's [native installer](https://code.claude.com/docs/en/setup) at build time (see [.devcontainer/Dockerfile](.devcontainer/Dockerfile)), as `user` under `~/.local` on the `stable` channel, so the CLI can update itself inside the running container. A rebuilt container starts from the version baked into the image and catches up in the background; `claude doctor` shows the version, the channel and the last update attempt, `claude update` forces one. The VS Code extension (`anthropic.claude-code`, listed under `customizations`) brings its own copy of the CLI for the chat panel; the terminal `claude` is the one from the image. Both use the same `~/.claude`.
 
-- On first use, open a terminal in the container, run `claude`, and follow the browser sign-in prompt. If the browser finishes but the terminal does not notice, paste the code shown in the browser at the `Paste code here if prompted` prompt.
-- Authentication and settings live in the Docker named volume `claude-code-config`, mounted at `/home/user/.claude` with `CLAUDE_CONFIG_DIR` pointing at it. The volume is shared by every dev container on this host that mounts it, so you sign in once per host and stay signed in across rebuilds. To start over, sign out with `/logout` or run `docker volume rm claude-code-config`.
+- On first use, open a terminal in the container, run `claude`, and sign in with your company Claude Team account in the browser. If the browser finishes but the terminal does not notice, paste the code shown in the browser at the `Paste code here if prompted` prompt.
+- Authentication, settings and session history live in the Docker named volume `claude-code-config-<your user>` (`${localEnv:USER}` in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)), mounted at `/home/user/.claude` with `CLAUDE_CONFIG_DIR` pointing at it. The volume is shared by every dev container of yours on this host that mounts it, the PetaLinux ones included, so you sign in once per machine and stay signed in across rebuilds. To start over, sign out with `/logout` (this signs out every container sharing the volume) or run `docker volume rm claude-code-config-<your user>`.
 
-> The volume holds your Claude Code credentials. Anything running inside the container, including `claude --dangerously-skip-permissions`, can read them.
+> The volume holds your Claude Code credentials. Anything that runs inside the container can read them: `claude --dangerously-skip-permissions`, but also the build itself — west, CMake and the code they fetch. This container also runs `--privileged` with `/dev` and passwordless `sudo`, so `sudo` inside it is root on the host; treat Claude's permission prompts accordingly.

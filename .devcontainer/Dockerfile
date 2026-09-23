@@ -31,3 +31,25 @@ RUN ln -s "/opt/toolchains/zephyr-sdk/hosttools/sysroots/$(uname -m)-pokysdk-lin
 ENV PATH="${PATH}:/opt/toolchains/hosttools/usr/bin"
 
 USER user
+
+# Claude Code CLI: Anthropic's native installer, stable channel, run as user so the CLI lands under
+# ~/.local and can update itself at runtime. The Dev Container Feature used before installed a
+# root-owned npm global under /usr/local that user could not update (measured 2026-09-23: the
+# container sat at 2.1.266 while the host ran 2.1.280) and made Dev Containers build an image per
+# workspace. The script is saved to a file first: piped into bash, a failed download would run an
+# empty script and the build would pass without claude; `claude --version` makes any other failure
+# loud. ~/.claude (pre-created above) is the mount point of the credentials volume named in
+# devcontainer.json and its contents seed every fresh volume, so it is reduced to the one settings
+# file that selects the update channel; the build-time ~/.claude.json (a machine id minted at
+# build) is removed. BuildKit caches this layer: the baked version is only the floor the CLI
+# updates from; a rebuild without cache refreshes it. Needs egress to claude.ai and
+# downloads.claude.ai. The same lines, user name aside, are in petalinux-infra/docker/Dockerfile.
+ENV PATH="${PATH}:/home/user/.local/bin"
+RUN export HOME=/home/user \
+ && wget -qO /tmp/claude-install.sh https://claude.ai/install.sh \
+ && bash /tmp/claude-install.sh stable \
+ && rm -f /tmp/claude-install.sh "$HOME/.claude.json" \
+ && rm -rf "$HOME/.claude/backups" "$HOME/.claude/downloads" "$HOME/.claude/sessions" \
+ && mkdir -p "$HOME/.claude" \
+ && printf '{ "autoUpdatesChannel": "stable" }\n' > "$HOME/.claude/settings.json" \
+ && claude --version

@@ -3,9 +3,6 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
-    "features": {
-        "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
-    },
     "remoteUser": "user",
     "runArgs": [
         "--privileged",
@@ -13,7 +10,12 @@
         "/dev:/dev"
     ],
     "mounts": [
-        "source=claude-code-config,target=/home/user/.claude,type=volume",
+        // Claude Code sign-in, settings and session history: one Docker volume per host user,
+        // shared by every dev container of that user on this machine (the PetaLinux ones mount
+        // the same volume), so you sign in once per machine. CLAUDE_CONFIG_DIR below moves
+        // ~/.claude.json (the OAuth session) into it. Anything running in the container can
+        // read these credentials. The CLI itself is installed in the image (Dockerfile).
+        "source=claude-code-config-${localEnv:USER},target=/home/user/.claude,type=volume",
         "source=zephyrproject-rtos,target=/opt/zephyrproject-rtos,type=volume"
     ],
     "containerEnv": {
@@ -23,7 +25,7 @@
     // extension does NOT check these, so the same figures are documented in README.md
     // where a developer will actually read them.
     //
-    // storage: measured - 33.4 GB image + ~2.7 GB per Zephyr version in the shared
+    // storage: measured - 32.2 GB image + ~2.7 GB per Zephyr version in the shared
     //          volume, leaving headroom for builds and a second version.
     // memory:  a floor, not a measurement. This app's build peaks around 2.6 GB
     //          including the VS Code server; 8 GB leaves room for -j on many cores
@@ -48,7 +50,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "Anthropic.claude-code",
+                "anthropic.claude-code",
                 "ms-vscode.cpptools",
                 "ms-vscode.cmake-tools",
                 "marus25.cortex-debug",
