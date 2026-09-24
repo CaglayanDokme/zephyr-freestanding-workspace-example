@@ -9,7 +9,7 @@ This project demonstrates:
 - A single place, [env.sh](env.sh), where the Zephyr version and the application's module dependencies are declared.
 - Docker Dev Container configuration for development and debugging.
 
-> **A Linux host running the dev container is the only supported environment.** Windows and macOS are not supported: Docker Desktop runs containers in a virtual machine with no USB passthrough, so the board cannot be flashed or debugged from the container.
+> **The dev container needs a Linux host.** Docker Desktop on Windows or macOS runs containers in a virtual machine with neither USB passthrough nor host networking, so a container there can reach no board. The board itself may be plugged into any machine, a Windows laptop included, as long as the container runs on Linux; see [Probe Access](#probe-access).
 >
 > Everything the build needs, west, CMake, Ninja, Python packages and the Zephyr SDK, comes from the container image rather than from this repository, so the commands below will not work on a bare host either. If you want a host installation anyway, follow Zephyr's own [Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html); this repository does not document or test that path.
 
@@ -98,7 +98,9 @@ Run these in a container terminal, from the repository root; `west` commands nee
 
 ## Probe Access
 
-Flashing and debugging need OpenOCD's udev rules installed on the **host**, not in the container: the container is given the host's device nodes, but the host decides who may write to them. Install them once, then unplug and replug the board.
+Where the board is plugged in decides how it is reached. Both routes debug from the same VS Code window; only flashing differs.
+
+**Probe on the container host**, the machine running the dev container. Install OpenOCD's udev rules on the **host**, not in the container: the container is given the host's device nodes, but the host decides who may write to them. Install them once, then unplug and replug the board.
 
 ```bash
 sudo curl -fsSL -o /etc/udev/rules.d/60-openocd.rules \
@@ -106,8 +108,9 @@ sudo curl -fsSL -o /etc/udev/rules.d/60-openocd.rules \
 sudo udevadm control --reload
 ```
 
-If the board is plugged into your local machine while the container runs on a remote one, see
-[docs/remote-debugging.md](docs/remote-debugging.md).
+`west flash` and the *probe on the container host* launch configuration then work as they are.
+
+**Probe on your local machine**, typically a Windows laptop in front of you while the container runs on a Linux machine you reach over SSH. Nothing is forwarded at USB level: OpenOCD runs next to the board and its GDB port is carried to the container's `localhost:3333` by an SSH reverse forward. Flashing goes through GDB's `load`, because `west flash` starts its own OpenOCD and expects the probe in the container. Setup in [docs/remote-debugging.md](docs/remote-debugging.md).
 
 ## Debugging
 

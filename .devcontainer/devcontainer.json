@@ -7,7 +7,14 @@
     "runArgs": [
         "--privileged",
         "-v",
-        "/dev:/dev"
+        "/dev:/dev",
+        // Share the host's network namespace. Debugging a board plugged into another machine runs
+        // OpenOCD next to the board and reaches it through an SSH reverse forward, which sshd binds
+        // on this host's loopback interface; a container on the default bridge network cannot
+        // connect to that, one on the host network simply uses localhost:3333. The container is
+        // already privileged with the host's /dev, so no isolation is given up that it still had.
+        // Existing containers need a rebuild to pick this up. See docs/remote-debugging.md.
+        "--network=host"
     ],
     "mounts": [
         // Claude Code sign-in, settings and session history: one Docker volume per host user,

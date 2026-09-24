@@ -1,156 +1,119 @@
-# Debugging a board over USB/IP
+# Debugging a board plugged into another machine
 
 For when the workspace runs in a dev container on a remote machine, but the board is plugged into
-the local machine in front of you.
-
-USB/IP forwards the debug probe itself, so once it is attached the remote machine treats it as a
-locally plugged device. `west flash`, `west debug` and the VS Code launch configurations then work
-exactly as they do with a local board — nothing in the workspace needs changing.
-
-```
-  local machine (board)                             remote machine (workspace + container)
-  ST-Link ──USB──> usbipd :3240  <═══ ssh -R ═══>  :3240 ──attach──> /dev/bus/usb/… ──> container
-```
+the local machine in front of you, typically a Windows laptop.
 
 Throughout, **local machine** is the one the board is plugged into and **remote machine** is the
-one running the dev container. Both must run Linux. Replace `<user>@<remote-host>` and `<busid>`
-with your own values.
+one running the dev container. Replace `<user>@<remote-host>` with your own values.
+
+```
+  local machine (board)                              remote machine (workspace + container)
+  ST-Link ──USB──> openocd :3333  <═══ ssh -R ═══>  :3333 <──── gdb (container, host network)
+```
+
+OpenOCD runs next to the board, so the many small USB transactions a debug session generates stay
+on that machine. GDB stays in the container with the ELF and the sources, and speaks OpenOCD's GDB
+remote protocol through an SSH reverse forward, one network round trip per GDB packet. The forward
+lands on the remote machine's loopback interface; the container reaches it because
+[.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json) starts it with
+`--network=host`.
+
+Flashing goes through GDB's `load` on the same connection. `west flash` and `west debug` cannot use
+this path: their runner starts its own OpenOCD in the container and needs the probe there.
 
 ## One-time setup
 
-### On the local machine
+**On the local machine**, install OpenOCD 0.12 or newer. On Windows the
+[xPack OpenOCD](https://xpack-dev-tools.github.io/openocd-xpack/) archive needs no installer:
+extract it and run `bin\openocd.exe` from there; it finds its own `scripts` directory. Windows 11
+installs the ST-Link's WinUSB driver from Windows Update on first plug-in; if OpenOCD reports
+`open failed`, install ST's driver package STSW-LINK009. On Linux, install the distribution's
+`openocd` and the udev rules from the [README](../README.md#probe-access).
 
-```bash
-sudo apt install linux-tools-generic          # provides usbip and usbipd
-sudo modprobe usbip-host
-```
-
-### On the remote machine
-
-```bash
-sudo apt install linux-tools-generic
-sudo modprobe vhci-hcd
-```
-
-Install the OpenOCD udev rules **on the remote machine**, not on the local one:
-
-```bash
-sudo curl -fsSL -o /etc/udev/rules.d/60-openocd.rules \
-    https://raw.githubusercontent.com/openocd-org/openocd/master/contrib/60-openocd.rules
-sudo udevadm control --reload
-```
-
-This is the step people get wrong. With USB/IP the device node appears on the **remote** machine,
-so that is where udev decides its ownership. Without the rules the node is `root:root` and the
-container's unprivileged user cannot open it.
-
-Check that the rules cover your probe. An older snapshot may only know ST-Link V2:
-
-```bash
-lsusb | grep 0483                                        # e.g. 0483:374e for an STLINK-V3
-grep 374e /etc/udev/rules.d/60-openocd.rules             # must return a line
-```
-
-The rules grant group `plugdev`, matched numerically. Confirm the remote machine's `plugdev` gid
-equals the one inside the container:
-
-```bash
-getent group plugdev                                     # on the remote machine
-docker exec <container> id                               # must list the same gid
-```
-
-### Make the tunnel permanent (recommended)
-
-In the local machine's `~/.ssh/config`:
+Then add the forward to the remote machine's entry in `~/.ssh/config` (`%USERPROFILE%\.ssh\config`
+on Windows):
 
 ```
 Host <remote-host>
     User <user>
-    RemoteForward 3240 localhost:3240
-    ExitOnForwardFailure yes
+    RemoteForward 3333 127.0.0.1:3333
     ServerAliveInterval 30
 ```
 
-`ExitOnForwardFailure` is not optional. Without it, a forward that fails to bind leaves ssh
-running as though nothing is wrong, and every later step fails for reasons that point elsewhere.
+VS Code Remote-SSH reads the same file, so its own connection to the host carries the forward and
+the only thing left to start by hand each session is OpenOCD. Two details are deliberate. The
+target is `127.0.0.1`, not `localhost`: OpenOCD listens on IPv4 only, and on Windows `localhost`
+resolves to the IPv6 loopback first, which ssh then fails to connect to; from the container that
+looks like every connection closing after two seconds with no data. And there is no
+`ExitOnForwardFailure`: the forward applies to every connection to that host, so a second VS Code
+window cannot bind 3333 and logs a warning, whereas `ExitOnForwardFailure yes` would stop that
+window from connecting at all.
 
-Note that this applies the forward to *every* connection to that host, so a second concurrent
-session will fail to bind. That is intended: it now fails loudly instead of silently.
+**In the workspace**, the container has to share the remote machine's network namespace. That is
+set in `devcontainer.json`, but a container created before the setting was added keeps its bridge
+network: run **Dev Containers: Rebuild Container** once. Afterwards `ip addr` in a container
+terminal lists the remote machine's interfaces, `docker0` among them, instead of a lone `eth0` on
+`172.17.x.x`.
 
 ## Each session
 
-**1. Export the probe (local machine).**
+**1. Start OpenOCD (local machine).** Leave it running; it serves GDB on `localhost:3333`. The
+`-rtos auto` makes OpenOCD look for the thread list a Debug preset exports
+(`CONFIG_DEBUG_THREAD_INFO=y` from `debug.conf`), so the debugger shows Zephyr's threads; with a
+Release ELF nothing is found and OpenOCD carries on without them.
 
-```bash
-sudo usbipd -D                        # skip if already running
-usbip list -l                         # note the busid, e.g. 3-3
-sudo usbip bind -b <busid>
+```
+openocd -f board/st_nucleo_g4.cfg -c "stm32g4x.cpu configure -rtos auto"
 ```
 
-**2. Open the tunnel (local machine).** Skip if you added it to `~/.ssh/config` and are already
-connected.
+**2. Connect (local machine).** Open the remote in VS Code Remote-SSH as usual; the forward comes
+with it. Without the `~/.ssh/config` entry, open the tunnel in a terminal instead and leave it open
+for the session. Windows 11 ships this `ssh`:
 
-```bash
-ssh -f -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
-    -R 3240:localhost:3240 <user>@<remote-host>
+```
+ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 3333:127.0.0.1:3333 <user>@<remote-host>
 ```
 
-**3. Attach (remote machine).**
+**3. Debug (VS Code).** Run **Debug (Nucleo G474RE, probe on your local machine via SSH)**. It
+builds the active CMake preset, loads its ELF into flash, resets, and stops at `main`. To flash
+without debugging, run the task **Flash (Nucleo G474RE, probe on your local machine via SSH)** from
+Terminal > Run Task; it is this command:
 
 ```bash
-usbip list -r 127.0.0.1               # should list your probe
-sudo usbip attach -r 127.0.0.1 -b <busid>
+/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb -batch \
+    -ex "target extended-remote localhost:3333" -ex load -ex "monitor reset run" \
+    build/nucleo_g474re/zephyr/zephyr.elf
 ```
-
-The `127.0.0.1` is correct: from the remote machine's point of view, the local machine's daemon is
-at the near end of the tunnel.
 
 ## Verify
 
-Work outwards. Each command should succeed before you try the next.
-
 ```bash
 # On the remote machine
-usbip port                            # shows the imported device
-lsusb | grep 0483                     # now a normal USB device
-ls -l /dev/bus/usb/<bus>/<dev>        # expect: crw-rw---- root plugdev
+ss -lnt | grep 3333                   # the forward: 127.0.0.1:3333 LISTEN
 
 # In the container
-lsusb | grep 0483                     # visible through the /dev bind mount
-openocd -f board/st_nucleo_g4.cfg -c "init; targets; shutdown"
+ip addr | grep -c docker0             # 1 with host networking; 0 means rebuild the container
+/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb -batch \
+    -ex "target extended-remote localhost:3333" -ex "monitor targets"
 ```
 
-A working OpenOCD run reports target voltage and detects the CPU, which means real SWD traffic
-reached the chip:
-
-```
-Info : STLINK V3J9M3 (API v3) VID:PID 0483:374E
-Info : Target voltage: 3.300000
-Info : [stm32g4x.cpu] Cortex-M4 r0p1 processor detected
-```
-
-From there, `west flash --build-dir <build directory> --runner openocd` and the launch
-configurations behave as they would with a local board.
+The last command makes OpenOCD on the local machine print `accepting 'gdb' connection`, and GDB
+prints OpenOCD's target table with `stm32g4x.cpu` in state `halted`.
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `usbip: error: could not connect to 127.0.0.1:3240` on the remote machine | the tunnel's forward never bound | reconnect with `ExitOnForwardFailure=yes`; check `ss -lnt \| grep 3240` on the remote machine |
-| Local machine reports `no exportable devices`, and `/sys/bus/usb/devices/<busid>/usbip_status` is `2` | stale attachment from a session that died without detaching | `sudo usbip unbind -b <busid>` then `sudo usbip bind -b <busid>` |
-| Node is `root:root`, container cannot open it | udev rules missing on the remote machine, or they predate your probe | install the current rules there, `udevadm control --reload`, then detach and re-attach |
-| Container sees the node but OpenOCD reports permission denied | container user not in the remote machine's `plugdev`, or the gids differ | compare `getent group plugdev` on the remote machine with `id` in the container |
-| Everything worked, then stopped | the local machine slept or the link dropped, killing the tunnel and the attachment | re-run steps 2 and 3; use `autossh` to survive this |
+| `localhost:3333: Connection refused` in the container | no forward, or the container is still on the bridge network | `ss -lnt \| grep 3333` on the remote machine must show a listener; `ip addr` in the container must show `docker0`, otherwise rebuild the container |
+| `remote port forwarding failed for listen port 3333` in the terminal or in the Remote-SSH output log | port 3333 on the remote machine is taken: a stale forward, a second VS Code window, or `west debug` running in a host-networked container | `ss -lntp \| grep 3333` there and stop the holder |
+| Every connection to `localhost:3333` closes after ~2 s with no data, and OpenOCD never logs `accepting 'gdb' connection` | the forward's target is `localhost`, which the Windows ssh client resolves to IPv6 first | spell it `127.0.0.1`, as above |
+| OpenOCD on the local machine exits with `open failed` or `claim interface failed` | another program holds the probe: a second OpenOCD, STM32CubeIDE, STM32CubeProgrammer | close it, replug the board |
+| CALL STACK shows a single thread and RTOS Views is empty | the ELF comes from a Release preset, or OpenOCD was started without `-rtos auto` | build a Debug preset; restart OpenOCD with the command in step 1 |
 
-`usbip port` printing `libusbip: error: fopen` alongside a correct listing is harmless. It only
-means the client could not read its own bookkeeping file, so it cannot name the remote host.
+## Why not USB/IP
 
-## Teardown
-
-```bash
-sudo usbip detach -p 00               # on the remote machine, port number from "usbip port"
-sudo usbip unbind -b <busid>          # on the local machine, returns the probe to local use
-```
-
-Unbinding matters if you want to use the board from the local machine again; while it is bound,
-that machine's own tools cannot see it.
+Forwarding the probe itself with USB/IP was tried first. It keeps `west flash` working, but every
+ST-Link command becomes a network round trip: measured through a laptop-to-VM link, one 32-bit
+memory read took ~0.4 s, OpenOCD needed ~10 s to start and up to ~11 s to answer GDB's first
+packet, and loading a 17 KB image took ~50 s, with GDB kept alive only by `set remotetimeout 60`.
+The procedure is in this file's history: `git show 2715de4:docs/remote-debugging.md`.
