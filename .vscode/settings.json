@@ -2,5 +2,10 @@
     "cmake.sourceDirectory": "${workspaceFolder}/sample-zephyr-app",
     "cmake.useCMakePresets": "always",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-    "C_Cpp.intelliSenseEngine": "default"
+    "C_Cpp.intelliSenseEngine": "default",
+    // Zephyr SDK toolchain for cortex-debug: gdb, objdump and nm resolve from path + prefix.
+    // Version-neutral through the Dockerfile's /opt/toolchains/zephyr-sdk symlink; tasks.json
+    // reuses the path via ${config:...}.
+    "cortex-debug.armToolchainPath": "/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin",
+    "cortex-debug.armToolchainPrefix": "arm-zephyr-eabi"
 }

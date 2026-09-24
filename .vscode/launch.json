@@ -1,50 +1,45 @@
 {
     "version": "0.2.0",
+    // Every configuration builds and debugs the active CMake preset; pick it in the CMake panel first.
     "configurations": [
         {
-            "name": "Debug with OpenOCD (Nucleo G474RE)",
-            "cwd": "${workspaceFolder}",
-            "executable": "${command:cmake.buildDirectory}/zephyr/zephyr.elf",
+            // Board plugged into the machine that runs this container; cortex-debug starts OpenOCD
+            // here. Needs the host udev rules: README, "Probe Access". "rtos": "auto" lets OpenOCD
+            // pick up the thread list a Debug preset exports (debug.conf); a Release ELF just has none.
+            "name": "Debug (Nucleo G474RE, probe on the container host)",
+            "type": "cortex-debug",
             "request": "launch",
-            "type": "cortex-debug",
-            "servertype": "openocd",
-            "serverpath": "openocd",
-            "gdbPath": "/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
-            "configFiles": [
-                "board/st_nucleo_g4.cfg"
-            ],
-            "runToEntryPoint": "main",
-            "showDevDebugOutput": "none"
-        },
-        {
-            "name": "Attach to OpenOCD Server",
-            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: build",
             "executable": "${command:cmake.buildDirectory}/zephyr/zephyr.elf",
-            "request": "attach",
-            "type": "cortex-debug",
-            "servertype": "external",
-            "gdbPath": "/opt/toolchains/zephyr-sdk/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
-            "gdbTarget": "localhost:3333"
+            "servertype": "openocd",
+            "configFiles": ["board/st_nucleo_g4.cfg"],
+            "rtos": "auto",
+            "runToEntryPoint": "main"
         },
         {
-            "name": "Debug Native Sim (GDB)",
+            // Board plugged into the machine in front of you while the container runs elsewhere:
+            // OpenOCD runs next to the board and an SSH forward brings its GDB port to
+            // localhost:3333. Setup: docs/remote-debugging.md.
+            "name": "Debug (Nucleo G474RE, probe on your local machine via SSH)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "preLaunchTask": "CMake: build",
+            "executable": "${command:cmake.buildDirectory}/zephyr/zephyr.elf",
+            "servertype": "external",
+            "gdbTarget": "localhost:3333",
+            "runToEntryPoint": "main"
+        },
+        {
+            // Host build under the host GDB, not the SDK's. Needs a native_sim preset active.
+            "name": "Debug (native_sim)",
             "type": "cppdbg",
             "request": "launch",
+            "preLaunchTask": "CMake: build",
             "program": "${command:cmake.buildDirectory}/zephyr/zephyr.exe",
-            "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
+            "setupCommands": [{ "text": "-enable-pretty-printing", "ignoreFailures": true }]
         }
     ]
 }

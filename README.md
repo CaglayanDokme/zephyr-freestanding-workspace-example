@@ -114,11 +114,13 @@ sudo udevadm control --reload
 
 ## Debugging
 
-Both hardware configurations need the host-side probe access described above.
+Launch configurations are in [.vscode/launch.json](.vscode/launch.json). Each builds the active CMake preset first and debugs its ELF. Use a Debug preset: it compiles at `-Og` and exports the thread list that gives OpenOCD and the RTOS Views panel Zephyr's threads.
 
-VS Code launch configurations are provided in [.vscode/launch.json](.vscode/launch.json):
-- **Debug with OpenOCD (Nucleo G474RE)**: Launches OpenOCD and connects GDB to the board via ST-Link.
-- **Attach to OpenOCD Server**: Connects GDB to an OpenOCD instance running inside the container on port 3333.
+- **Debug (Nucleo G474RE, probe on the container host)**: starts OpenOCD in the container, flashes, runs to `main`. Needs the udev rules above.
+- **Debug (Nucleo G474RE, probe on your local machine via SSH)**: connects to the OpenOCD forwarded to `localhost:3333`, flashes, runs to `main`. Setup in [docs/remote-debugging.md](docs/remote-debugging.md).
+- **Debug (native_sim)**: runs the native simulator build under the host GDB.
+
+Flashing without debugging is a task, Terminal > Run Task: **Flash (Nucleo G474RE, probe on the container host)** runs `west flash`; **Flash (Nucleo G474RE, probe on your local machine via SSH)** programs the board through the forwarded OpenOCD with GDB.
 
 ## AI Tools
 
