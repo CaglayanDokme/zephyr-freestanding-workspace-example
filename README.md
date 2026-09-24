@@ -78,22 +78,22 @@ bash .devcontainer/verify-zephyr.sh
 
 ## Building and Running
 
-Run these in a container terminal, from the repository root. Both routes write to `build/<preset>`, matching the `binaryDir` in [sample-zephyr-app/CMakePresets.json](sample-zephyr-app/CMakePresets.json), so one board never overwrites another's build tree.
+Run these in a container terminal, from the repository root; `west` commands need `source env.sh` first (see [Environment variables](#environment-variables)). [sample-zephyr-app/CMakePresets.json](sample-zephyr-app/CMakePresets.json) is the one place a build is described: the board, and for the Debug presets the Kconfig fragment [sample-zephyr-app/debug.conf](sample-zephyr-app/debug.conf), which selects `-Og` and thread awareness. The Release presets build Zephyr's defaults, `-Os`. `CMAKE_BUILD_TYPE` is deliberately not set: Zephyr takes the optimization level from Kconfig, and CMake's own `Release` flags would smuggle `-DNDEBUG` into the build. Every preset writes to `build/<preset>`, so one board never overwrites another's tree, and the debug configurations find the ELF there.
 
-- **Build for ST Nucleo G474RE:**
-  ```bash
-  west build --board nucleo_g474re sample-zephyr-app --build-dir build/nucleo_g474re --pristine
-  ```
-
-- Another option is to use the CMake presets directly, if you successfully exported Zephyr to the CMake user package registry. Run `cmake --list-presets -S sample-zephyr-app` to see the four available presets:
+- **Configure and build:** `cmake --list-presets -S sample-zephyr-app` shows the four presets. CMake Tools in VS Code drives the same presets.
   ```bash
   cmake -S sample-zephyr-app --preset nucleo_g474re
   cmake --build build/nucleo_g474re
   ```
 
-- **Flash to ST Nucleo G474RE:** requires probe access on the host, see below.
+- **`west build`** works on a tree a preset configured, and is what `west flash` runs before flashing. Do not configure with `west build --board ... --pristine` into `build/<preset>`: west then configures with Zephyr's defaults, not the preset's, and the tree quietly loses `-Og` and the flash runner. A west-only tree belongs in another directory, such as `build/west`.
   ```bash
-  west flash --build-dir build/nucleo_g474re --runner openocd
+  west build --build-dir build/nucleo_g474re
+  ```
+
+- **Flash, probe on the container host:** needs the udev rules from [Probe Access](#probe-access). The nucleo presets set `BOARD_FLASH_RUNNER=openocd`, because Zephyr's default flasher for this board, STM32CubeProgrammer, is not in the image. With the probe on your local machine, flash through GDB instead; see [Debugging](#debugging).
+  ```bash
+  west flash --build-dir build/nucleo_g474re
   ```
 
 ## Probe Access

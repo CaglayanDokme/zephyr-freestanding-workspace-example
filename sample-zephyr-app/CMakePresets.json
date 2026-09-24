@@ -15,41 +15,41 @@
     {
       "name": "nucleo_g474re",
       "displayName": "STM32 Nucleo G474RE (Debug)",
-      "description": "Target ST Nucleo G474RE board with Debug configuration",
+      "description": "ST Nucleo G474RE; -Og and thread awareness from debug.conf; west flash through OpenOCD",
       "inherits": "base",
       "cacheVariables": {
         "BOARD": "nucleo_g474re",
-        "CMAKE_BUILD_TYPE": "Debug"
+        "EXTRA_CONF_FILE": "debug.conf",
+        "BOARD_FLASH_RUNNER": "openocd"
       }
     },
     {
       "name": "nucleo_g474re-release",
       "displayName": "STM32 Nucleo G474RE (Release)",
-      "description": "Target ST Nucleo G474RE board with Release configuration",
+      "description": "ST Nucleo G474RE; Zephyr defaults (-Os); west flash through OpenOCD",
       "inherits": "base",
       "cacheVariables": {
         "BOARD": "nucleo_g474re",
-        "CMAKE_BUILD_TYPE": "Release"
+        "BOARD_FLASH_RUNNER": "openocd"
       }
     },
     {
       "name": "native_sim",
       "displayName": "Native Sim (Debug)",
-      "description": "Target Native POSIX simulation with Debug configuration",
+      "description": "Native simulator; -Og and thread awareness from debug.conf",
       "inherits": "base",
       "cacheVariables": {
         "BOARD": "native_sim",
-        "CMAKE_BUILD_TYPE": "Debug"
+        "EXTRA_CONF_FILE": "debug.conf"
       }
     },
     {
       "name": "native_sim-release",
       "displayName": "Native Sim (Release)",
-      "description": "Target Native POSIX simulation with Release configuration",
+      "description": "Native simulator; Zephyr defaults (-Os)",
       "inherits": "base",
       "cacheVariables": {
-        "BOARD": "native_sim",
-        "CMAKE_BUILD_TYPE": "Release"
+        "BOARD": "native_sim"
       }
     }
   ],
